@@ -58,6 +58,10 @@ on:
         description: Grow the Data seed to this many GiB (optional)
         required: false
         default: ""
+      extra_kernel_args:
+        description: Extra kernel boot arguments, space separated
+        required: false
+        default: ""
       skip_setup:
         description: Mark Setup as done in the Data seed
         type: boolean
@@ -119,6 +123,7 @@ jobs:
         env:
           HAS_CHIP_ID: ${{ secrets.UNIXNU_UNIQUE_CHIP_ID != '' }}
           OWNER_TRUST_CACHE: ${{ inputs.owner_trust_cache }}
+          EXTRA_KERNEL_ARGS: ${{ inputs.extra_kernel_args }}
           GROW_GIB: ${{ inputs.grow_gib }}
           SKIP_SETUP: ${{ inputs.skip_setup }}
         run: |
@@ -300,6 +305,7 @@ jobs:
           fi
           if [ -f "$RUNNER_TEMP/data.dbr" ]; then args+=(--data-ramdisk "$RUNNER_TEMP/data.dbr"); fi
           if [ "$SKIP_SETUP" = true ]; then args+=(--skip-setup); fi
+          for a in $EXTRA_KERNEL_ARGS; do args+=(--kernel-arg "$a"); done
           ./unixnu build payload "${args[@]}"
 
       - name: Build the firmware volume
