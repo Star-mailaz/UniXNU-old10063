@@ -226,6 +226,8 @@ jobs:
           git clone --depth 1 --branch fuxi https://github.com/Sohytrs/uefi-fuxi.git "$RUNNER_TEMP/uefi-fuxi"
           test -f "$RUNNER_TEMP/uefi-fuxi/Silicon/Silicium/SiliciumPkg/Library/FrameBufferSerialPortLib/Font.h"
           echo "UNIXNU_UEFI=$RUNNER_TEMP/uefi-fuxi" >> "$GITHUB_ENV"
+          git -C "$RUNNER_TEMP/uefi-fuxi" submodule update --init --depth 1 Binaries
+          ls "$RUNNER_TEMP/uefi-fuxi/Binaries" | head -3
 
       - name: Patch the prelink emitter
         run: |
