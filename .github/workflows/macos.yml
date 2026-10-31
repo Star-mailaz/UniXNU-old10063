@@ -58,10 +58,6 @@ on:
         description: Grow the Data seed to this many GiB (optional)
         required: false
         default: ""
-      extra_kernel_args:
-        description: Extra kernel boot arguments, space separated
-        required: false
-        default: ""
       skip_setup:
         description: Mark Setup as done in the Data seed
         type: boolean
@@ -123,7 +119,6 @@ jobs:
         env:
           HAS_CHIP_ID: ${{ secrets.UNIXNU_UNIQUE_CHIP_ID != '' }}
           OWNER_TRUST_CACHE: ${{ inputs.owner_trust_cache }}
-          EXTRA_KERNEL_ARGS: ${{ inputs.extra_kernel_args }}
           GROW_GIB: ${{ inputs.grow_gib }}
           SKIP_SETUP: ${{ inputs.skip_setup }}
         run: |
@@ -228,14 +223,9 @@ jobs:
       # firmware step, so check our firmware out and point the variable at it.
       - name: Check out the firmware for the panic screen font
         run: |
-          git clone --depth 1 --branch fuxi https://github.com/hanzi123-bilp/uefi-fuxi.git "$RUNNER_TEMP/uefi-fuxi"
+          git clone --depth 1 --branch fuxi https://github.com/Sohytrs/uefi-fuxi.git "$RUNNER_TEMP/uefi-fuxi"
           test -f "$RUNNER_TEMP/uefi-fuxi/Silicon/Silicium/SiliciumPkg/Library/FrameBufferSerialPortLib/Font.h"
           echo "UNIXNU_UEFI=$RUNNER_TEMP/uefi-fuxi" >> "$GITHUB_ENV"
-          cd "$RUNNER_TEMP/uefi-fuxi/Platforms/Xiaomi/fuxiPkg"
-          sed -i "s|^#INF fuxiPkg/Drivers/FuxiBootMemoryDxe/FuxiBootMemoryDxe.inf|INF fuxiPkg/Drivers/FuxiBootMemoryDxe/FuxiBootMemoryDxe.inf|" Include/DXE.inc
-          sed -i "s|^  #fuxiPkg/Drivers/FuxiBootMemoryDxe/FuxiBootMemoryDxe.inf|  fuxiPkg/Drivers/FuxiBootMemoryDxe/FuxiBootMemoryDxe.inf|" fuxi.dsc
-          grep -c "^INF fuxiPkg/Drivers/FuxiBootMemoryDxe" Include/DXE.inc
-          grep -c "^  fuxiPkg/Drivers/FuxiBootMemoryDxe" fuxi.dsc
 
       - name: Patch the prelink emitter
         run: |
@@ -310,22 +300,20 @@ jobs:
           fi
           if [ -f "$RUNNER_TEMP/data.dbr" ]; then args+=(--data-ramdisk "$RUNNER_TEMP/data.dbr"); fi
           if [ "$SKIP_SETUP" = true ]; then args+=(--skip-setup); fi
-          for a in $EXTRA_KERNEL_ARGS; do args+=(--kernel-arg "$a"); done
           ./unixnu build payload "${args[@]}"
 
       - name: Build the firmware volume
         if: contains(inputs.steps, 'firmware')
         run: ./unixnu build firmware --uefi "$RUNNER_TEMP/uefi-fuxi"
 
-      - name: Pack the boot image
-        if: contains(inputs.steps, 'firmware')
-        run: |
-          # The 8796 base bootimg rejects the fuxi header; the device-local packer from the UEFI tree writes header v3 and appends the payload after the gzip kernel.
-          curl -sSL -o "$RUNNER_TEMP/bootimage.py" https://raw.githubusercontent.com/Xyvern08371/uefi-fuxi/old/scripts/bootimage.py
-          python3 "$RUNNER_TEMP/bootimage.py" --unixnu-root "$GITHUB_WORKSPACE" --device "$GITHUB_WORKSPACE/device" --uefi "$RUNNER_TEMP/uefi-fuxi" --fd "$RUNNER_TEMP/uefi-fuxi/Build/fuxiPkg/DEBUG_CLANGPDB/FV/SILICIUM_UEFI.fd" --dtb "$RUNNER_TEMP/uefi-fuxi/Resources/DTBs/fuxi.dtb" --ramdisk out/fuxi/payload/payload.img -o out/fuxi/boot/boot.img
           mkdir -p out/fuxi/boot
           cp "$RUNNER_TEMP/uefi-fuxi/Build/fuxiPkg/DEBUG_CLANGPDB/FV/SILICIUM_UEFI.fd" out/fuxi/boot/SILICIUM_UEFI.fd
 
+      - name: Stage the firmware volume for the artifact
+        if: contains(inputs.steps, 'firmware')
+        run: |
+          mkdir -p out/fuxi/boot
+          cp "$RUNNER_TEMP/uefi-fuxi/Build/fuxiPkg/DEBUG_CLANGPDB/FV/SILICIUM_UEFI.fd" out/fuxi/boot/
       # Fork addition: the upstream workflow publishes text logs only. The
       # device images are needed to boot a real phone, so keep them as an artifact.
       - name: Upload the built images
@@ -337,8 +325,8 @@ jobs:
             out/*/kernel/kernel.macho
             out/*/payload/payload.img
             out/*/payload/payload.json
+            out/*/boot/*
             out/*/boot/boot.img
-            out/*/boot/*.fd
             out/*/status.txt
             out/*/tree/.cache/fuxi-qud-build/libQcomXnuUsbDebug.a
             out/*/tree/.cache/fuxi-qud-build/build-report.json
