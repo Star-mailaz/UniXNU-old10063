@@ -308,7 +308,7 @@ jobs:
 
       - name: Pack the boot image
         if: contains(inputs.steps, 'firmware')
-        run: ./unixnu bootimg --dtb "$RUNNER_TEMP/uefi-fuxi/Resources/DTBs/fuxi.dtb"
+        run: |          # The 8796 base bootimg rejects the fuxi header; the device-local packer from the UEFI tree writes header v3 and appends the payload after the gzip kernel.          curl -sSL -o "$RUNNER_TEMP/bootimage.py" https://raw.githubusercontent.com/Xyvern08371/uefi-fuxi/old/scripts/bootimage.py          python3 "$RUNNER_TEMP/bootimage.py" --unixnu-root "$GITHUB_WORKSPACE" --device "$GITHUB_WORKSPACE/device" --uefi "$RUNNER_TEMP/uefi-fuxi" --fd "$RUNNER_TEMP/uefi-fuxi/Build/fuxiPkg/DEBUG_CLANGPDB/FV/SILICIUM_UEFI.fd" --dtb "$RUNNER_TEMP/uefi-fuxi/Resources/DTBs/fuxi.dtb" --ramdisk out/fuxi/payload/payload.img -o out/fuxi/boot/boot.img
 
       # Fork addition: the upstream workflow publishes text logs only. The
       # device images are needed to boot a real phone, so keep them as an artifact.
