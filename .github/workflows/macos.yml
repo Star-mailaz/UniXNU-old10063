@@ -308,9 +308,6 @@ jobs:
         if: contains(inputs.steps, 'firmware')
         run: ./unixnu build firmware --uefi "$RUNNER_TEMP/uefi-fuxi"
 
-          mkdir -p out/fuxi/boot
-          cp "$RUNNER_TEMP/uefi-fuxi/Build/fuxiPkg/DEBUG_CLANGPDB/FV/SILICIUM_UEFI.fd" out/fuxi/boot/SILICIUM_UEFI.fd
-
       - name: Stage the firmware volume for the artifact
         if: contains(inputs.steps, 'firmware')
         run: |
