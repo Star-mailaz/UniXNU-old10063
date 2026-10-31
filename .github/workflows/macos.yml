@@ -228,9 +228,14 @@ jobs:
       # firmware step, so check our firmware out and point the variable at it.
       - name: Check out the firmware for the panic screen font
         run: |
-          git clone --depth 1 --branch old https://github.com/Xyvern08371/uefi-fuxi.git "$RUNNER_TEMP/uefi-fuxi"
+          git clone --depth 1 --branch fuxi https://github.com/hanzi123-bilp/uefi-fuxi.git "$RUNNER_TEMP/uefi-fuxi"
           test -f "$RUNNER_TEMP/uefi-fuxi/Silicon/Silicium/SiliciumPkg/Library/FrameBufferSerialPortLib/Font.h"
           echo "UNIXNU_UEFI=$RUNNER_TEMP/uefi-fuxi" >> "$GITHUB_ENV"
+          cd "$RUNNER_TEMP/uefi-fuxi/Platforms/Xiaomi/fuxiPkg"
+          sed -i "s|^#INF fuxiPkg/Drivers/FuxiBootMemoryDxe/FuxiBootMemoryDxe.inf|INF fuxiPkg/Drivers/FuxiBootMemoryDxe/FuxiBootMemoryDxe.inf|" Include/DXE.inc
+          sed -i "s|^  #fuxiPkg/Drivers/FuxiBootMemoryDxe/FuxiBootMemoryDxe.inf|  fuxiPkg/Drivers/FuxiBootMemoryDxe/FuxiBootMemoryDxe.inf|" fuxi.dsc
+          grep -c "^INF fuxiPkg/Drivers/FuxiBootMemoryDxe" Include/DXE.inc
+          grep -c "^  fuxiPkg/Drivers/FuxiBootMemoryDxe" fuxi.dsc
 
       - name: Patch the prelink emitter
         run: |
