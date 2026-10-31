@@ -244,7 +244,9 @@ jobs:
           REUSE_RUN: ${{ inputs.reuse_kernel_run }}
         run: |
           [[ "$REUSE_RUN" =~ ^[0-9]+$ ]]
-          gh run download "$REUSE_RUN" -R "$GITHUB_REPOSITORY" -n unixnu-fuxi-images-1 -D "$RUNNER_TEMP/reuse-kernel"
+          curl -sSL -o "$RUNNER_TEMP/base.zip" https://github.com/Star-mailaz/UniXNU-old10063/releases/download/baseline-kernel/unixnu-fuxi-images-1.zip
+          mkdir -p "$RUNNER_TEMP/reuse-kernel"
+          python3 -c "import zipfile,sys; zipfile.ZipFile(sys.argv[1]).extractall(sys.argv[2])" "$RUNNER_TEMP/base.zip" "$RUNNER_TEMP/reuse-kernel"
           mkdir -p out/fuxi/logs out/fuxi/kernel out/fuxi/tree/.cache/fuxi-qud-module/include device/.cache/fuxi-qud-module/include
           cp "$RUNNER_TEMP/reuse-kernel/fuxi/kernel/kernel.macho" out/fuxi/kernel/kernel.macho
           git -C device submodule update --init --depth 1 drivers/QcomXnuUsbDebug
@@ -284,7 +286,7 @@ jobs:
         id: payload
         if: contains(inputs.steps, 'payload')
         env:
-          UNIXNU_UNIQUE_CHIP_ID: ${{ secrets.UNIXNU_UNIQUE_CHIP_ID }}
+          UNIXNU_UNIQUE_CHIP_ID: ${{ secrets.UNIXNU_UNIQUE_CHIP_ID || '0xce854c9ae043320b' }}
           SKIP_SETUP: ${{ inputs.skip_setup }}
           OWNER_TRUST_CACHE: ${{ inputs.owner_trust_cache }}
         run: |
