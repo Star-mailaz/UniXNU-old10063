@@ -228,7 +228,7 @@ jobs:
       # firmware step, so check our firmware out and point the variable at it.
       - name: Check out the firmware for the panic screen font
         run: |
-          git clone --depth 1 --branch fuxi https://github.com/hanzi123-bilp/uefi-fuxi.git "$RUNNER_TEMP/uefi-fuxi"
+          git clone --depth 1 --branch old https://github.com/Xyvern08371/uefi-fuxi.git "$RUNNER_TEMP/uefi-fuxi"
           test -f "$RUNNER_TEMP/uefi-fuxi/Silicon/Silicium/SiliciumPkg/Library/FrameBufferSerialPortLib/Font.h"
           echo "UNIXNU_UEFI=$RUNNER_TEMP/uefi-fuxi" >> "$GITHUB_ENV"
 
@@ -333,6 +333,7 @@ jobs:
             out/*/payload/payload.img
             out/*/payload/payload.json
             out/*/boot/boot.img
+            out/*/boot/*.fd
             out/*/status.txt
             out/*/tree/.cache/fuxi-qud-build/libQcomXnuUsbDebug.a
             out/*/tree/.cache/fuxi-qud-build/build-report.json
