@@ -24,6 +24,7 @@ on:
           - kernel payload
           - kernel userdata
           - kernel userdata payload
+          - kernel payload firmware
         default: kernel
       xcode:
         description: Xcode version of the macos-26 image (/Applications/Xcode_<version>.app)
@@ -222,7 +223,7 @@ jobs:
       # firmware step, so check our firmware out and point the variable at it.
       - name: Check out the firmware for the panic screen font
         run: |
-          git clone --depth 1 https://github.com/Sohytrs/uefi-fuxi.git "$RUNNER_TEMP/uefi-fuxi"
+          git clone --depth 1 --branch fuxi https://github.com/hanzi123-bilp/uefi-fuxi.git "$RUNNER_TEMP/uefi-fuxi"
           test -f "$RUNNER_TEMP/uefi-fuxi/Silicon/Silicium/SiliciumPkg/Library/FrameBufferSerialPortLib/Font.h"
           echo "UNIXNU_UEFI=$RUNNER_TEMP/uefi-fuxi" >> "$GITHUB_ENV"
 
@@ -298,6 +299,14 @@ jobs:
           if [ -f "$RUNNER_TEMP/data.dbr" ]; then args+=(--data-ramdisk "$RUNNER_TEMP/data.dbr"); fi
           if [ "$SKIP_SETUP" = true ]; then args+=(--skip-setup); fi
           ./unixnu build payload "${args[@]}"
+
+      - name: Build the firmware volume
+        if: contains(inputs.steps, 'firmware')
+        run: ./unixnu build firmware --uefi "$RUNNER_TEMP/uefi-fuxi"
+
+      - name: Pack the boot image
+        if: contains(inputs.steps, 'firmware')
+        run: ./unixnu bootimg --dtb "$RUNNER_TEMP/uefi-fuxi/Resources/DTBs/fuxi.dtb"
 
       # Fork addition: the upstream workflow publishes text logs only. The
       # device images are needed to boot a real phone, so keep them as an artifact.
